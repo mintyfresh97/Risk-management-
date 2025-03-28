@@ -3,21 +3,24 @@ import streamlit as st
 import requests
 import yfinance as yf
 
-# Define asset categories and their correct symbols
+# CoinGecko ID mapping
+coingecko_ids = {
+    'Bitcoin (BTC)': 'bitcoin',
+    'Ethereum (ETH)': 'ethereum',
+    'XRP': 'ripple',
+    'Solana (SOL)': 'solana',
+    'Cardano (ADA)': 'cardano',
+    'Chainlink (LINK)': 'chainlink',
+    'Curve (CRV)': 'curve-dao-token',
+    'Convex (CVX)': 'convex-finance',
+    'Sui (SUI)': 'sui',
+    'Fartcoin': 'fartcoin',  # If not listed, it will fallback
+    'Ondo (ONDO)': 'ondo-finance'
+}
+
+# Grouped asset list with fallback to yfinance for stocks/commodities
 assets = {
-    'Cryptocurrencies': {
-        'Bitcoin (BTC)': 'BTCUSDT',
-        'Ethereum (ETH)': 'ETHUSDT',
-        'XRP': 'XRPUSDT',
-        'Solana (SOL)': 'SOLUSDT',
-        'Cardano (ADA)': 'ADAUSDT',
-        'Chainlink (LINK)': 'LINKUSDT',
-        'Curve (CRV)': 'CRVUSDT',
-        'Convex (CVX)': 'CVXUSDT',
-        'Sui (SUI)': 'SUIUSDT',
-        'Fartcoin': 'FARTUSDT',
-        'Ondo (ONDO)': 'ONDOUSDT'
-    },
+    'Cryptocurrencies': list(coingecko_ids.keys()),
     'Stocks': {
         'Tesla (TSLA)': 'TSLA',
         'NVIDIA (NVDA)': 'NVDA'
@@ -27,15 +30,17 @@ assets = {
     }
 }
 
-def get_crypto_price(symbol):
+def get_crypto_price_from_coingecko(name):
     try:
-        url = f'https://api.binance.com/api/v3/ticker/price?symbol={symbol}'
+        coin_id = coingecko_ids.get(name)
+        if not coin_id:
+            raise ValueError("Unknown CoinGecko ID")
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd"
         response = requests.get(url, timeout=5)
-        response.raise_for_status()
         data = response.json()
-        return float(data['price'])
-    except requests.exceptions.RequestException as e:
-        st.error(f"Binance API Error for {symbol}: {e}")
+        return data[coin_id]['usd']
+    except Exception as e:
+        st.error(f"CoinGecko API Error for {name}: {e}")
         return None
 
 def get_stock_price(symbol):
@@ -70,17 +75,16 @@ def calculate_trade_risk(account_size_gbp, leverage, risk_percent, entry_price, 
 
     return result
 
-# Streamlit UI
-st.title("Leverage Risk Calculator with Live Price Debug")
+# Streamlit App UI
+st.title("Leverage Risk Calculator with Live CoinGecko Prices")
 
 category = st.selectbox("Select Asset Category", list(assets.keys()))
-asset_name = st.selectbox("Select Asset", list(assets[category].keys()))
-symbol = assets[category][asset_name]
-
-# Fetch live price
 if category == "Cryptocurrencies":
-    price = get_crypto_price(symbol)
+    asset_name = st.selectbox("Select Asset", assets[category])
+    price = get_crypto_price_from_coingecko(asset_name)
 else:
+    asset_name = st.selectbox("Select Asset", list(assets[category].keys()))
+    symbol = assets[category][asset_name]
     price = get_stock_price(symbol)
 
 if price:
@@ -88,7 +92,6 @@ if price:
 else:
     st.warning(f"Live price for {asset_name} not available. Enter manually.")
 
-# Inputs
 account_size = st.number_input("Account Size (Â£)", value=500)
 leverage = st.number_input("Leverage", value=20)
 risk_percent = st.number_input("Risk % of Account", min_value=0.0, max_value=100.0, value=2.0)
