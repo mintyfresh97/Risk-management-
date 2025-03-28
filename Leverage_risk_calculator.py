@@ -14,11 +14,10 @@ coingecko_ids = {
     'Curve (CRV)': 'curve-dao-token',
     'Convex (CVX)': 'convex-finance',
     'Sui (SUI)': 'sui',
-    'Fartcoin': 'fartcoin',  # If not listed, it will fallback
+    'Fartcoin': 'fartcoin',
     'Ondo (ONDO)': 'ondo-finance'
 }
 
-# Grouped asset list with fallback to yfinance for stocks/commodities
 assets = {
     'Cryptocurrencies': list(coingecko_ids.keys()),
     'Stocks': {
@@ -58,6 +57,7 @@ def calculate_trade_risk(account_size_gbp, leverage, risk_percent, entry_price, 
     stop_loss_distance = abs(entry_price - stop_loss_price)
     stop_loss_pct = (stop_loss_distance / entry_price) * 100
     max_allowed_stop_pct = (risk_amount / position_size) * 100
+    total_loss_if_hit = position_size * (stop_loss_pct / 100)
 
     result = {
         "Account Size (Â£)": account_size_gbp,
@@ -70,13 +70,14 @@ def calculate_trade_risk(account_size_gbp, leverage, risk_percent, entry_price, 
         "Stop-Loss %": round(stop_loss_pct, 4),
         "Position Size (Â£)": round(position_size, 2),
         "Max Allowed SL %": round(max_allowed_stop_pct, 4),
+        "Expected Loss if SL Hit (Â£)": round(total_loss_if_hit, 2),
         "Within Risk?": stop_loss_pct <= max_allowed_stop_pct
     }
 
     return result
 
-# Streamlit App UI
-st.title("Leverage Risk Calculator with Live CoinGecko Prices")
+# Streamlit UI
+st.title("Leverage Risk Calculator")
 
 category = st.selectbox("Select Asset Category", list(assets.keys()))
 if category == "Cryptocurrencies":
@@ -88,18 +89,18 @@ else:
     price = get_stock_price(symbol)
 
 if price:
-    st.success(f"Live price for {asset_name}: ${price:.2f}")
+    st.success(f"Live price for {asset_name}: Â£{price:.2f}")
 else:
     st.warning(f"Live price for {asset_name} not available. Enter manually.")
 
 account_size = st.number_input("Account Size (Â£)", value=500)
-leverage = st.number_input("Leverage", value=20)
-risk_percent = st.number_input("Risk % of Account", min_value=0.0, max_value=100.0, value=2.0)
+leverage = st.number_input("Leverage", value=10)
+risk_percent = st.number_input("Risk % of Account", min_value=0.0, max_value=100.0, value=1.0)
 entry_price = st.number_input("Entry Price", value=price if price else 0.0)
-stop_loss_price = st.number_input("Stop-Loss Price", value=price * 0.98 if price else 0.0)
+stop_loss_price = st.number_input("Stop-Loss Price", value=price * 0.99 if price else 0.0)
 
 if st.button("Calculate Risk"):
     trade = calculate_trade_risk(account_size, leverage, risk_percent, entry_price, stop_loss_price)
     st.subheader("Trade Summary")
     for key, value in trade.items():
-        st.write(f"{key}: {value}")
+        st.write(f"{key}: Â£{value}" if "Â£" in key else f"{key}: {value}")
