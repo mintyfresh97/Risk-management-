@@ -23,29 +23,30 @@ assets = {
         'NVIDIA (NVDA)': 'NVDA'
     },
     'Commodities': {
-        'Gold (XAU)': 'GLD'  # Using GLD ETF
+        'Gold (XAU)': 'GLD'
     }
 }
 
-# Live price fetchers
-def get_crypto_price(binance_symbol):
+def get_crypto_price(symbol):
     try:
-        url = f'https://api.binance.com/api/v3/ticker/price?symbol={binance_symbol}'
-        response = requests.get(url)
+        url = f'https://api.binance.com/api/v3/ticker/price?symbol={symbol}'
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
         data = response.json()
         return float(data['price'])
-    except:
+    except requests.exceptions.RequestException as e:
+        st.error(f"Binance API Error for {symbol}: {e}")
         return None
 
-def get_stock_price(yahoo_symbol):
+def get_stock_price(symbol):
     try:
-        stock = yf.Ticker(yahoo_symbol)
+        stock = yf.Ticker(symbol)
         data = stock.history(period='1d')
         return data['Close'].iloc[-1]
-    except:
+    except Exception as e:
+        st.error(f"Yahoo Finance Error for {symbol}: {e}")
         return None
 
-# Trade risk calculation
 def calculate_trade_risk(account_size_gbp, leverage, risk_percent, entry_price, stop_loss_price):
     position_size = account_size_gbp * leverage
     risk_amount = account_size_gbp * (risk_percent / 100)
@@ -70,9 +71,8 @@ def calculate_trade_risk(account_size_gbp, leverage, risk_percent, entry_price, 
     return result
 
 # Streamlit UI
-st.title("Leverage Risk Calculator with Live Prices")
+st.title("Leverage Risk Calculator with Live Price Debug")
 
-# Select category and asset
 category = st.selectbox("Select Asset Category", list(assets.keys()))
 asset_name = st.selectbox("Select Asset", list(assets[category].keys()))
 symbol = assets[category][asset_name]
@@ -88,14 +88,13 @@ if price:
 else:
     st.warning(f"Live price for {asset_name} not available. Enter manually.")
 
-# User inputs
+# Inputs
 account_size = st.number_input("Account Size (Â£)", value=500)
 leverage = st.number_input("Leverage", value=20)
 risk_percent = st.number_input("Risk % of Account", min_value=0.0, max_value=100.0, value=2.0)
 entry_price = st.number_input("Entry Price", value=price if price else 0.0)
 stop_loss_price = st.number_input("Stop-Loss Price", value=price * 0.98 if price else 0.0)
 
-# Show results
 if st.button("Calculate Risk"):
     trade = calculate_trade_risk(account_size, leverage, risk_percent, entry_price, stop_loss_price)
     st.subheader("Trade Summary")
