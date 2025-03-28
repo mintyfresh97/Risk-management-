@@ -3,43 +3,43 @@ import streamlit as st
 import requests
 import yfinance as yf
 
-# Define asset categories and their symbols
+# Define asset categories and their correct symbols
 assets = {
     'Cryptocurrencies': {
-        'Bitcoin (BTC)': 'BTC',
-        'Ethereum (ETH)': 'ETH',
-        'XRP': 'XRP',
-        'Solana (SOL)': 'SOL',
-        'Cardano (ADA)': 'ADA',
-        'Chainlink (LINK)': 'LINK',
-        'Curve (CRV)': 'CRV',
-        'Convex (CVX)': 'CVX',
-        'Sui (SUI)': 'SUI',
-        'Fartcoin': 'FART',
-        'Ondo (ONDO)': 'ONDO'
+        'Bitcoin (BTC)': 'BTCUSDT',
+        'Ethereum (ETH)': 'ETHUSDT',
+        'XRP': 'XRPUSDT',
+        'Solana (SOL)': 'SOLUSDT',
+        'Cardano (ADA)': 'ADAUSDT',
+        'Chainlink (LINK)': 'LINKUSDT',
+        'Curve (CRV)': 'CRVUSDT',
+        'Convex (CVX)': 'CVXUSDT',
+        'Sui (SUI)': 'SUIUSDT',
+        'Fartcoin': 'FARTUSDT',
+        'Ondo (ONDO)': 'ONDOUSDT'
     },
     'Stocks': {
         'Tesla (TSLA)': 'TSLA',
         'NVIDIA (NVDA)': 'NVDA'
     },
     'Commodities': {
-        'Gold (XAU)': 'GLD'  # Using GLD ETF for gold price
+        'Gold (XAU)': 'GLD'  # Using GLD ETF
     }
 }
 
 # Live price fetchers
-def get_crypto_price(symbol):
+def get_crypto_price(binance_symbol):
     try:
-        url = f'https://api.binance.com/api/v3/ticker/price?symbol={symbol}USDT'
+        url = f'https://api.binance.com/api/v3/ticker/price?symbol={binance_symbol}'
         response = requests.get(url)
         data = response.json()
         return float(data['price'])
     except:
         return None
 
-def get_stock_price(symbol):
+def get_stock_price(yahoo_symbol):
     try:
-        stock = yf.Ticker(symbol)
+        stock = yf.Ticker(yahoo_symbol)
         data = stock.history(period='1d')
         return data['Close'].iloc[-1]
     except:
