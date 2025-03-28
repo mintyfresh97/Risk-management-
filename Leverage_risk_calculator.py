@@ -1,4 +1,3 @@
-
 import streamlit as st
 
 def calculate_trade_risk(account_size_gbp, leverage, risk_percent, entry_price, stop_loss_price):
@@ -37,4 +36,5 @@ if st.button("Calculate Risk"):
     trade = calculate_trade_risk(account_size, leverage, risk_percent, entry_price, stop_loss_price)
     for key, value in trade.items():
         st.write(f"{key}: {value}"
+
 
