@@ -35,6 +35,6 @@ stop_loss_price = st.number_input("Stop-Loss Price", value=84500.0)
 if st.button("Calculate Risk"):
     trade = calculate_trade_risk(account_size, leverage, risk_percent, entry_price, stop_loss_price)
     for key, value in trade.items():
-        st.write(f"{key}: {value}"
+        st.write(f"{key}: {value}")
 
 
