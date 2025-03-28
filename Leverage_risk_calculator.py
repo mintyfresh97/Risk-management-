@@ -9,15 +9,15 @@ def calculate_trade_risk(account_size_gbp, leverage, risk_percent, entry_price, 
     max_allowed_stop_pct = (risk_amount / position_size) * 100
 
     result = {
-        "Account Size (Â£)": account_size_gbp,
+        "Account Size (£)": account_size_gbp,
         "Leverage": leverage,
         "Risk % of Account": risk_percent,
-        "Risk Amount (Â£)": round(risk_amount, 2),
+        "Risk Amount (£)": round(risk_amount, 2),
         "Entry Price": entry_price,
         "Stop-Loss Price": stop_loss_price,
-        "Stop-Loss Distance (Â£)": round(stop_loss_distance, 2),
+        "Stop-Loss Distance (£)": round(stop_loss_distance, 2),
         "Stop-Loss %": round(stop_loss_pct, 4),
-        "Position Size (Â£)": round(position_size, 2),
+        "Position Size (£)": round(position_size, 2),
         "Max Allowed SL %": round(max_allowed_stop_pct, 4),
         "Within Risk?": stop_loss_pct <= max_allowed_stop_pct
     }
