@@ -1,6 +1,7 @@
 streamlit
-pytesseract
+easyocr
 Pillow
+numpy
 opencv-python-headless
 yfinance
 requests
