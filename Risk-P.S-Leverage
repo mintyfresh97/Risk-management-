@@ -1,39 +1,54 @@
 
 import streamlit as st
+from PIL import Image
+import pytesseract
+import re
 
-def calculate_trade_risk(account_size_gbp, leverage, risk_percent, entry_price, stop_loss_price):
-    position_size = account_size_gbp * leverage
-    risk_amount = account_size_gbp * (risk_percent / 100)
-    stop_loss_distance = abs(entry_price - stop_loss_price)
-    stop_loss_pct = (stop_loss_distance / entry_price) * 100
+st.title("Chart Trade Decision (AI-Powered)")
 
-    max_allowed_stop_pct = (risk_amount / position_size) * 100
+st.markdown("""
+Upload a chart screenshot and this tool will scan for key levels (e.g. Fib 50%, 61.8%) and decide
+if a trade meets your entry criteria.
+""")
 
-    result = {
-        "Account Size (Â£)": account_size_gbp,
-        "Leverage": leverage,
-        "Risk % of Account": risk_percent,
-        "Risk Amount (Â£)": round(risk_amount, 2),
-        "Entry Price": entry_price,
-        "Stop-Loss Price": stop_loss_price,
-        "Stop-Loss Distance (Â£)": round(stop_loss_distance, 2),
-        "Stop-Loss %": round(stop_loss_pct, 4),
-        "Position Size (Â£)": round(position_size, 2),
-        "Max Allowed SL %": round(max_allowed_stop_pct, 4),
-        "Within Risk?": stop_loss_pct <= max_allowed_stop_pct
-    }
+uploaded_file = st.file_uploader("Upload chart image", type=["png", "jpg", "jpeg"])
 
-    return result
+def extract_prices_from_image(img):
+    """Use OCR to extract price-like text from image"""
+    raw_text = pytesseract.image_to_string(img)
+    price_matches = re.findall(r"\b\d{1,5}(?:\.\d{1,4})?\b", raw_text)
+    prices = sorted(set(float(p) for p in price_matches if float(p) > 0), reverse=True)
+    return prices
 
-st.title("Leverage Risk Calculator")
+def evaluate_trade_decision(prices):
+    """Apply basic fib-based decision rules"""
+    decision = "No Go"
+    explanation = []
 
-account_size = st.number_input("Account Size (Â£)", value=500)
-leverage = st.number_input("Leverage", value=20)
-risk_percent = st.number_input("Risk % of Account", min_value=0.0, max_value=100.0, value=2.0)
-entry_price = st.number_input("Entry Price", value=85700.0)
-stop_loss_price = st.number_input("Stop-Loss Price", value=84500.0)
+    for p in prices:
+        if 0.5 <= p <= 0.618:
+            decision = "Go"
+            explanation.append(f"Fib zone detected: {p}")
+        if 0.48 <= p <= 0.52:
+            explanation.append(f"Near 50% Fib: {p}")
+        if 0.6 <= p <= 0.63:
+            explanation.append(f"Near 61.8% Fib: {p}")
 
-if st.button("Calculate Risk"):
-    trade = calculate_trade_risk(account_size, leverage, risk_percent, entry_price, stop_loss_price)
-    for key, value in trade.items():
-        st.write(f"{key}: {value}")
+    if not explanation:
+        explanation.append("No valid fib zone found")
+
+    return decision, explanation
+
+if uploaded_file:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Uploaded Chart", use_column_width=True)
+
+    with st.spinner("Analyzing chart..."):
+        fib_prices = extract_prices_from_image(image)
+        decision, reasons = evaluate_trade_decision(fib_prices)
+
+        st.subheader("Trade Decision")
+        st.write(f"**{decision}**")
+        st.write("Reasons:")
+        for r in reasons:
+            st.write(f"- {r}")
