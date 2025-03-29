@@ -1,5 +1,5 @@
 streamlit
-easyocr
+ess
 Pillow
 numpy
 opencv-python-headless
