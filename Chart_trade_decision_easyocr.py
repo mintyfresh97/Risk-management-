@@ -1,10 +1,11 @@
 
 import streamlit as st
+import easyocr
 from PIL import Image
-import pytesseract
+import numpy as np
 import re
 
-st.title("Chart Trade Decision (AI-Powered)")
+st.title("Chart Trade Decision (AI-Powered with EasyOCR)")
 
 st.markdown("""
 Upload a chart screenshot and this tool will scan for key levels (e.g. Fib 50%, 61.8%) and decide
@@ -13,15 +14,15 @@ if a trade meets your entry criteria.
 
 uploaded_file = st.file_uploader("Upload chart image", type=["png", "jpg", "jpeg"])
 
-def extract_prices_from_image(img):
-    """Use OCR to extract price-like text from image"""
-    raw_text = pytesseract.image_to_string(img)
-    price_matches = re.findall(r"\b\d{1,5}(?:\.\d{1,4})?\b", raw_text)
+def extract_prices_with_easyocr(image):
+    reader = easyocr.Reader(['en'], gpu=False)
+    img_array = np.array(image)
+    results = reader.readtext(img_array, detail=0)
+    price_matches = re.findall(r"\b\d{1,5}(?:\.\d{1,4})?\b", " ".join(results))
     prices = sorted(set(float(p) for p in price_matches if float(p) > 0), reverse=True)
     return prices
 
 def evaluate_trade_decision(prices):
-    """Apply basic fib-based decision rules"""
     decision = "No Go"
     explanation = []
 
@@ -44,7 +45,7 @@ if uploaded_file:
     st.image(image, caption="Uploaded Chart", use_column_width=True)
 
     with st.spinner("Analyzing chart..."):
-        fib_prices = extract_prices_from_image(image)
+        fib_prices = extract_prices_with_easyocr(image)
         decision, reasons = evaluate_trade_decision(fib_prices)
 
         st.subheader("Trade Decision")
